@@ -346,7 +346,41 @@ def animalEpcotHollywoodParkHandler(driver, park, ride, minHour, maxHour, overri
 
     return False
 
+def getNumberOfInstances():
+    return input("\nHow many instances of the bot do you want to run: ")
 
+def spawn_instance(index, numGuests, park, ride, minHour, maxHour):
+    print('INSTANCE {}'.format(index))
+    driver = createChromeDriver()
+
+    driver.get("https://disneyworld.disney.go.com/fastpass-plus/")
+
+    clickGetStartedButton(driver)
+
+    signIn(driver)
+
+    selectGuests(driver, numGuests)
+
+    print("\n---PLEASE CHOOSE A DATE ON SCREEN NOW---")
+
+    selectPark(driver, park)
+
+    allRidesFound = False
+    currentTimePeriod = 1
+
+
+    while allRidesFound == False:
+        sleep(5)
+
+        #If the park is magic kingdom, it has its seperate function because of the different HTML layout on the website
+        if park == "1":
+            allRidesFound = magicKingdomParkHandler(driver, ride, minHour, maxHour)
+        else:
+            allRidesFound = animalEpcotHollywoodParkHandler(driver, park, ride, minHour, maxHour)
+
+        #Click button to switch between morning, afternoon, and evening time periods
+        if allRidesFound == False:
+            currentTimePeriod = loopTimePeriod(driver, currentTimePeriod)
 
 #Where the program starts
 def main():
@@ -385,41 +419,14 @@ def main():
 
     printOutRidesChosen(park, ride, numGuests, minHour, maxHour) #Prints out chosen rides and converts ride number to actual ride name
 
+    numberOfInstances = int(getNumberOfInstances())
 
-    driver = createChromeDriver()
+    threads = []
+    for i in range(numberOfInstances):
+        t = threading.Thread(target=spawn_instance, args=(i + 1, numGuests, park, ride, minHour, maxHour,))
+        threads.append(t)
+        t.start()
 
-    driver.get("https://disneyworld.disney.go.com/fastpass-plus/")
-
-    clickGetStartedButton(driver)
-
-    signIn(driver)
-
-    selectGuests(driver, numGuests)
-
-    print("\n---PLEASE CHOOSE A DATE ON SCREEN NOW---")
-
-    selectPark(driver, park)
-
-    allRidesFound = False
-    currentTimePeriod = 1
-
-
-    while allRidesFound == False:
-        sleep(5)
-
-        #If the park is magic kingdom, it has its seperate function because of the different HTML layout on the website
-        if park == "1":
-            allRidesFound = magicKingdomParkHandler(driver, ride, minHour, maxHour, overrideChoice)
-        else:
-            allRidesFound = animalEpcotHollywoodParkHandler(driver, park, ride, minHour, maxHour, overrideChoice)
-
-        #Click button to switch between morning, afternoon, and evening time periods
-        if allRidesFound == False:
-            currentTimePeriod = loopTimePeriod(driver, currentTimePeriod)
 
 if __name__ == '__main__':
     main()
-
-
-
-

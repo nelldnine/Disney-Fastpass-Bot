@@ -92,8 +92,6 @@ def getNumberOfGuests():
                       "       1.) Just 1\n" +
                       "       2.) 2 or More\n"+
                       "Option: ")
-    if numGuests == "2" and len(credentials.guests) == 0:
-        sys.exit("You need to enter your guest's id's in credentials.py file before continuing")
     return numGuests
 
 #Converts the ride number to the actual ride name
@@ -154,14 +152,16 @@ def continueToDateSelection(driver):
 def continueToSelectUsersScreen(driver):
     driver.find_element_by_xpath("""//*[@id="fastPasslandingPage"]/div[2]/div[3]/div/div[1]/div/div""").click()
 
-#This clicks the guests specified in the credentials.py file
+# Loop every 1 minute to check if the "View My Plans" link shown in the "Choose Date & Park" page is present.
 def specifyGuests(driver):
-
-    for guest in credentials.guests:
-        if check_exists_by_xpath(driver, """//*[@id=""" + '"' + guest + '"' + """]/div"""):
-            driver.find_element_by_xpath("""//*[@id=""" + '"' + guest + '"' + """]/div""").click()
-
-    continueToDateSelection(driver)
+    try:
+        element = WebDriverWait(driver, 60).until(
+            EC.presence_of_element_located((By.ID, 'viewMyPlansLink'))
+        )
+    except:
+        specifyGuests(driver)
+    finally:
+        continueToDateSelection(driver)
 
 #This is the function that provides logic based on if the user is by themself or with a party
 def selectGuests(driver, numGuests):
@@ -181,13 +181,12 @@ def selectGuests(driver, numGuests):
                     continue
         elif numGuests == "2":
             try:
-                specifyGuests(driver)
+                continueToSelectUsersScreen(driver)
                 guestschosen = True
+                print('---PLEASE CHOOSE YOUR GUESTS ON SCREEN NOW---')
+                specifyGuests(driver)
             except:
-                try:
-                    continueToSelectUsersScreen(driver)
-                except:
-                    continue
+                continue
 
 #This clicks the button of the park they chose
 def selectPark(driver, park):
@@ -227,14 +226,6 @@ def confirmRide(driver, ride, num, timeNum, rideLocation, overrideChoice):
     # Override other reservation
     if (overrideChoice == 1 and
         check_exists_by_xpath(driver, """//*[@id="conflictsPagePage"]/div[4]/div[4]/div/div[3]/div/div[3]/div/div[1]""")):
-        # Click continue for each guest
-        for guest in credentials.guests:
-            while True:
-                try:
-                    driver.find_element_by_xpath("""//*[@id="conflictsPagePage"]/div[4]/div[4]/div/div[3]/div/div[3]/div/div[1]""").click()
-                except:
-                    break
-            sleep(1)
 
         # Click next to proceed to confirmation page
         while True:

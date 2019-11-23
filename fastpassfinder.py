@@ -1,8 +1,12 @@
 #Imports
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
+import threading
 import smtplib
 import sys
 
@@ -84,8 +88,6 @@ def getNumberOfGuests():
                       "       1.) Just 1\n" +
                       "       2.) 2 or More\n"+
                       "Option: ")
-    if numGuests == "2" and len(credentials.guests) == 0:
-        sys.exit("You need to enter your guest's id's in credentials.py file before continuing")
     return numGuests
 
 #Converts the ride number to the actual ride name
@@ -146,9 +148,10 @@ def continueToDateSelection(driver):
 def continueToSelectUsersScreen(driver):
     driver.find_element_by_xpath("""//*[@id="fastPasslandingPage"]/div[2]/div[3]/div/div[1]/div/div""").click()
 
-# Loop every 1 minute to check if the "View My Plans" link shown in the "Choose Date & Park" page is present.
+#This clicks the guests specified in the credentials.py file
 def specifyGuests(driver):
     try:
+        # Loop every 1 minute to check if the "View My Plans" link shown in the "Choose Date & Park" page is present.
         element = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.ID, 'viewMyPlansLink'))
         )
@@ -326,8 +329,6 @@ def animalEpcotHollywoodParkHandler(driver, park, ride, minHour, maxHour):
 
     return False
 
-
-
 #Where the program starts
 def main():
 
@@ -358,7 +359,6 @@ def main():
     ride = convertRideNumToText(park, ride)
 
     printOutRidesChosen(park, ride, numGuests, minHour, maxHour) #Prints out chosen rides and converts ride number to actual ride name
-
 
     driver = createChromeDriver()
 
@@ -393,6 +393,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-

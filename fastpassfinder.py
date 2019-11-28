@@ -3,6 +3,9 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 import smtplib
 import sys
@@ -155,18 +158,16 @@ def continueToSelectUsersScreen(driver):
 # Loop every 1 minute to check if the "View My Plans" link shown in the "Choose Date & Park" page is present.
 def specifyGuests(driver):
     try:
-        element = WebDriverWait(driver, 60).until(
+        element = WebDriverWait(driver, 3600).until(
             EC.presence_of_element_located((By.ID, 'viewMyPlansLink'))
         )
-    except:
-        specifyGuests(driver)
+    except Exception as e:
+        print(e)
     finally:
-        continueToDateSelection(driver)
+        return
 
 #This is the function that provides logic based on if the user is by themself or with a party
 def selectGuests(driver, numGuests):
-    print("\nSelecting your guests...")
-
     guestschosen = False
 
     while guestschosen == False:
@@ -182,11 +183,13 @@ def selectGuests(driver, numGuests):
         elif numGuests == "2":
             try:
                 continueToSelectUsersScreen(driver)
-                guestschosen = True
                 print('---PLEASE CHOOSE YOUR GUESTS ON SCREEN NOW---')
                 specifyGuests(driver)
+                guestschosen = True
             except:
                 continue
+
+    return
 
 #This clicks the button of the park they chose
 def selectPark(driver, park):
@@ -375,11 +378,13 @@ def main():
 
     numGuests = getNumberOfGuests()
 
-    overrideChoice = input("If a fastpass is found but conflicts with a fastpass you already have, would you like to automatically override the conflicting fastpass?:\n" +
-                      "If you select no, you will need to manually intervene\n" +
-                      "     1.) Yes\n" +
-                      "     2.) No\n" +
-                      "Choice: ")
+    # overrideChoice = input("If a fastpass is found but conflicts with a fastpass you already have, would you like to automatically override the conflicting fastpass?:\n" +
+    #                   "If you select no, you will need to manually intervene\n" +
+    #                   "     1.) Yes\n" +
+    #                   "     2.) No\n" +
+    #                   "Choice: ")
+
+    overrideChoice = "2"
 
     ride = convertRideNumToText(park, ride)
 

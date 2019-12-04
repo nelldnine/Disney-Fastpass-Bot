@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
+import threading
 import smtplib
 import sys
 
@@ -33,8 +34,9 @@ def check_exists_by_xpath(driver, xpath):
 def checkCredentialsFile():
     if not len(credentials.users):
         return False
-    if credentials.users[0][0] == '' and  credentials.users[0][1] == '':
-        return False
+    for user in credentials.users:
+        if user[0] == '' and  user[1] == '':
+            return False
     return True
 
 #Returns a park that the user wants fastpasses for
@@ -400,7 +402,7 @@ def main():
     if not checkCredentialsFile():
         sys.exit("You need to fill out the credentials.py file before continuing")
 
-    print("Welcome to Disney FastPass Finder!\n")
+    print("Welcome to Disney FastPass Finder!")
 
     instances = []
 
@@ -446,8 +448,19 @@ def main():
             'overrideChoice': overrideChoice,
         })
 
+    threads = []
     for instance in instances:
-        create_instance(**instance)
+        t = threading.Thread(target=create_instance, args=(
+            instance['user'],
+            instance['numGuests'],
+            instance['park'],
+            instance['ride'],
+            instance['minHour'],
+            instance['maxHour'],
+            instance['overrideChoice'],
+        ))
+        threads.append(t)
+        t.start()
 
 if __name__ == '__main__':
     main()

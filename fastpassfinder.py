@@ -31,10 +31,11 @@ def check_exists_by_xpath(driver, xpath):
 
 #This function checks whether the user has filled out the email and password in credentials.py file
 def checkCredentialsFile():
-    if credentials.email == "" or credentials.password == "":
+    if not len(credentials.users):
         return False
-    else:
-        return True
+    if credentials.users[0][0] == '' and  credentials.users[0][1] == '':
+        return False
+    return True
 
 #Returns a park that the user wants fastpasses for
 def getPark():
@@ -136,12 +137,12 @@ def clickGetStartedButton(driver):
             continue
 
 #Signs the user in with the email and password provided in the credentials.py file
-def signIn(driver):
+def signIn(driver, email, password):
     print("\nSigning you in...")
     while True:
         try:
-            driver.find_element_by_xpath("""//*[@id="loginPageUsername"]""").send_keys(credentials.email)
-            driver.find_element_by_xpath("""//*[@id="loginPagePassword"]""").send_keys(credentials.password)
+            driver.find_element_by_xpath("""//*[@id="loginPageUsername"]""").send_keys(email)
+            driver.find_element_by_xpath("""//*[@id="loginPagePassword"]""").send_keys(password)
             driver.find_element_by_xpath("""//*[@id="loginPageSubmitButton"]/span""").click()
             break
         except:
@@ -360,63 +361,23 @@ def animalEpcotHollywoodParkHandler(driver, park, ride, minHour, maxHour, overri
 
     return False
 
-
-
-#Where the program starts
-def main():
-
-    if not checkCredentialsFile():
-        sys.exit("You need to fill out the credentials.py file before continuing")
-
-    print("Welcome to Disney FastPass Finder!\n")
-
-    park = getPark()
-
-    # If the park is magic kingdom set the ride1, ride2, ride3 equal to the chosen ride
-    ride = getRide(park)
-
-    timeFrameChoice = input("Do you want to set a time frame for your ride:\n" +
-                      "     1.) Yes\n" +
-                      "     2.) No\n" + 
-                      "Choice: \n")
-
-    if timeFrameChoice == "1":
-        minHour = getMinHour()
-        maxHour = getMaxHour()
-    else:
-        minHour = False
-        maxHour = False
-
-    numGuests = getNumberOfGuests()
-
-    overrideChoice = input("If a fastpass is found but conflicts with a fastpass you already have, would you like to automatically override the conflicting fastpass?:\n" +
-                      "If you select no, you will need to manually intervene\n" +
-                      "     1.) Yes\n" +
-                      "     2.) No\n" +
-                      "Choice: ")
-
-    ride = convertRideNumToText(park, ride)
-
-    printOutRidesChosen(park, ride, numGuests, minHour, maxHour) #Prints out chosen rides and converts ride number to actual ride name
-
-
+def create_instance(user, numGuests, park, ride, minHour, maxHour, overrideChoice):
     driver = createChromeDriver()
 
     driver.get("https://disneyworld.disney.go.com/fastpass-plus/")
 
     clickGetStartedButton(driver)
 
-    signIn(driver)
+    signIn(driver, user[0], user[1])
 
     selectGuests(driver, numGuests)
 
-    print("\n---PLEASE CHOOSE A DATE ON SCREEN NOW---")
+    print("{}\n---PLEASE CHOOSE A DATE ON SCREEN NOW---".format(user[0]))
 
     selectPark(driver, park)
 
     allRidesFound = False
     currentTimePeriod = 1
-
 
     while allRidesFound == False:
         sleep(5)
@@ -430,6 +391,63 @@ def main():
         #Click button to switch between morning, afternoon, and evening time periods
         if allRidesFound == False:
             currentTimePeriod = loopTimePeriod(driver, currentTimePeriod)
+
+    return
+
+#Where the program starts
+def main():
+
+    if not checkCredentialsFile():
+        sys.exit("You need to fill out the credentials.py file before continuing")
+
+    print("Welcome to Disney FastPass Finder!\n")
+
+    instances = []
+
+    for user in credentials.users:
+
+        print('\n--- {} ---\n'.format(user[0]))
+        park = getPark()
+
+        # If the park is magic kingdom set the ride1, ride2, ride3 equal to the chosen ride
+        ride = getRide(park)
+
+        timeFrameChoice = input("Do you want to set a time frame for your ride:\n" +
+                        "     1.) Yes\n" +
+                        "     2.) No\n" + 
+                        "Choice: \n")
+
+        if timeFrameChoice == "1":
+            minHour = getMinHour()
+            maxHour = getMaxHour()
+        else:
+            minHour = False
+            maxHour = False
+
+        numGuests = getNumberOfGuests()
+
+        overrideChoice = input("If a fastpass is found but conflicts with a fastpass you already have, would you like to automatically override the conflicting fastpass?:\n" +
+                        "If you select no, you will need to manually intervene\n" +
+                        "     1.) Yes\n" +
+                        "     2.) No\n" +
+                        "Choice: ")
+
+        ride = convertRideNumToText(park, ride)
+
+        printOutRidesChosen(park, ride, numGuests, minHour, maxHour) #Prints out chosen rides and converts ride number to actual ride name
+
+        instances.append({
+            'user': user,
+            'numGuests': numGuests,
+            'park': park,
+            'ride': ride,
+            'minHour': minHour,
+            'maxHour': maxHour,
+            'overrideChoice': overrideChoice,
+        })
+
+    for instance in instances:
+        create_instance(**instance)
 
 if __name__ == '__main__':
     main()
